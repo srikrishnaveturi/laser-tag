@@ -1,1 +1,172 @@
+#include<IRremote.h>
+int rec = 4;
+IRrecv IRrec(rec);
+decode_results results;
+int health1 = 5;
+int health2 = 5;
+int team1led1 = 2;
+int team1led2 = 3;
+int team1led3 = 5;
+int team1led4 = 6;
+int team1led5 = 7;
+int team2led1 = 8;
+int team2led2 = 9;
+int team2led3 = 10;
+int team2led4 = 11;
+int team2led5 = 12;
+long int gun1 = 3149642683 ;  //BBBBBBBB
+long int gun2 = 2863311530  ; //AAAAAAAA
+long int temp1 = 3360940972;
+long int temp2 = 3932587451;
+void led(int a1, int a2)
+{ int i;
+  if (a1 == 5)
+  {
+    digitalWrite(team1led1, HIGH);
+    digitalWrite(team1led2, HIGH);
+    digitalWrite(team1led3, HIGH);
+    digitalWrite(team1led4, HIGH);
+    digitalWrite(team1led5, HIGH);
+  }
+  else if (a1 == 4)
+  {
+    digitalWrite(team1led1, HIGH);
+    digitalWrite(team1led2, HIGH);
+    digitalWrite(team1led3, HIGH);
+    digitalWrite(team1led4, HIGH);
+    digitalWrite(team1led5, LOW);
+  }
+  else if (a1 == 3)
+  {
+    digitalWrite(team1led1, HIGH);
+    digitalWrite(team1led2, HIGH);
+    digitalWrite(team1led3, HIGH);
+    digitalWrite(team1led4, LOW);
+    digitalWrite(team1led5, LOW);
+  }
+  else if (a1 == 2)
+  {
+    digitalWrite(team1led1, HIGH);
+    digitalWrite(team1led2, HIGH);
+    digitalWrite(team1led3, LOW);
+    digitalWrite(team1led4, LOW);
+    digitalWrite(team1led5, LOW);
+  }
+  else if (a1 == 1)
+  {
+    digitalWrite(team1led1, HIGH);
+    digitalWrite(team1led2, LOW);
+    digitalWrite(team1led3, LOW);
+    digitalWrite(team1led4, LOW);
+    digitalWrite(team1led5, LOW);
+  }
+  else if (a1 == 0)
+  {
+    Serial.println("team 2 won");
+    for (i = 0; i < 10; i++)
+    {
+      digitalWrite(team1led1, HIGH);
+      digitalWrite(team1led2, HIGH);
+      digitalWrite(team1led3, HIGH);
+      digitalWrite(team1led4, HIGH);
+      digitalWrite(team1led5, HIGH);
+      delay(1000);
+      digitalWrite(team1led1, LOW);
+      digitalWrite(team1led2, LOW);
+      digitalWrite(team1led3, LOW);
+      digitalWrite(team1led4, LOW);
+      digitalWrite(team1led5, LOW);
+      delay(1000);
+    }
+    exit(0);
+  }
+  if (a2 == 5)
+  {
+    digitalWrite(team2led1, HIGH);
+    digitalWrite(team2led2, HIGH);
+    digitalWrite(team2led3, HIGH);
+    digitalWrite(team2led4, HIGH);
+    digitalWrite(team2led5, HIGH);
+  }
+  else if (a2 == 4)
+  {
+    digitalWrite(team2led1, HIGH);
+    digitalWrite(team2led2, HIGH);
+    digitalWrite(team2led3, HIGH);
+    digitalWrite(team2led4, HIGH);
+    digitalWrite(team2led5, LOW);
+  }
+  else if (a2 == 3)
+  {
+    digitalWrite(team2led1, HIGH);
+    digitalWrite(team2led2, HIGH);
+    digitalWrite(team2led3, HIGH);
+    digitalWrite(team2led4, LOW);
+    digitalWrite(team2led5, LOW);
+  }
+  else if (a2 == 2)
+  {
+    digitalWrite(team2led1, HIGH);
+    digitalWrite(team2led2, HIGH);
+    digitalWrite(team2led3, LOW);
+    digitalWrite(team2led4, LOW);
+    digitalWrite(team2led5, LOW);
+  }
+  else if (a2 == 1)
+  {
+    digitalWrite(team2led1, HIGH);
+    digitalWrite(team2led2, LOW);
+    digitalWrite(team2led3, LOW);
+    digitalWrite(team2led4, LOW);
+    digitalWrite(team2led5, LOW);
+  }
+  else if (a2 == 0)
+  {
+    Serial.println("team 1 won");
+    for (i = 0; i < 10; i++)
+    {
+      digitalWrite(team2led1, HIGH);
+      digitalWrite(team2led2, HIGH);
+      digitalWrite(team2led3, HIGH);
+      digitalWrite(team2led4, HIGH);
+      digitalWrite(team2led5, HIGH);
+      delay(1000);
+      digitalWrite(team2led1, LOW);
+      digitalWrite(team2led2, LOW);
+      digitalWrite(team2led3, LOW);
+      digitalWrite(team2led4, LOW);
+      digitalWrite(team2led5, LOW);
+      delay(1000);
+    }
+    exit(0);
+  }
+}
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  IRrec.enableIRIn();
+  pinMode(LED_BUILTIN, OUTPUT);
+}
 
+void loop() {
+  // put your main code here, to run repeatedly:
+  if (IRrec.decode(&results))
+  {
+    if (results.value == gun1 || results.value == temp1)
+    {
+      Serial.println(results.value, HEX );
+      health1--;
+      led(health1, health2);
+      delay(200);
+    }
+    else if (results.value == gun2 || results.value == temp2)
+    {
+      Serial.println(results.value, HEX );
+      health2--;
+      led(health1, health2);
+      delay(200);
+    }
+
+    IRrec.resume();
+  }
+}
