@@ -14,6 +14,8 @@ int team2led2 = 9;
 int team2led3 = 10;
 int team2led4 = 11;
 int team2led5 = 12;
+int flag = 0;
+long int activation = 1487289606;
 long int gun1 = 3149642683 ;  //BBBBBBBB
 long int gun2 = 2863311530  ; //AAAAAAAA
 long int temp1 = 3360940972;
@@ -64,7 +66,7 @@ void led(int a1, int a2)
   else if (a1 == 0)
   {
     Serial.println("team 2 won");
-    digitalWrite(team1led1,LOW);
+    digitalWrite(team1led1, LOW);
     for (i = 0; i < 20; i++)
     {
       digitalWrite(team2led1, HIGH);
@@ -125,7 +127,7 @@ void led(int a1, int a2)
   else if (a2 == 0)
   {
     Serial.println("team 1 won");
-    digitalWrite(team2led1,LOW);
+    digitalWrite(team2led1, LOW);
     for (i = 0; i < 20; i++)
     {
       digitalWrite(team1led1, HIGH);
@@ -148,61 +150,77 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   IRrec.enableIRIn();
-  pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(team1led1, HIGH);
-    digitalWrite(team1led2, HIGH);
-    digitalWrite(team1led3, HIGH);
-    digitalWrite(team1led4, HIGH);
-    digitalWrite(team1led5, HIGH);
-    digitalWrite(team2led1, HIGH);
-    digitalWrite(team2led2, HIGH);
-    digitalWrite(team2led3, HIGH);
-    digitalWrite(team2led4, HIGH);
-    digitalWrite(team2led5, HIGH);
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   if (IRrec.decode(&results))
   {
-    if (results.value == gun1 || results.value == temp1)
+    if (results.value == activation)
+    {
+      flag = 1;
+      digitalWrite(team1led1, HIGH);
+      digitalWrite(team1led2, HIGH);
+      digitalWrite(team1led3, HIGH);
+      digitalWrite(team1led4, HIGH);
+      digitalWrite(team1led5, HIGH);
+      digitalWrite(team2led1, HIGH);
+      digitalWrite(team2led2, HIGH);
+      digitalWrite(team2led3, HIGH);
+      digitalWrite(team2led4, HIGH);
+      digitalWrite(team2led5, HIGH);
+      Serial.println("activated");
+    }
+    if ((results.value == gun1 || results.value == temp1) && flag == 1)
     {
       Serial.println(results.value, HEX );
       health1--;
       led(health1, health2);
       delay(3000);
-      digitalWrite(team1led1, LOW);
-    digitalWrite(team1led2, LOW);
-    digitalWrite(team1led3, LOW);
-    digitalWrite(team1led4,  LOW);
-    digitalWrite(team1led5, LOW);
-    digitalWrite(team2led1, LOW);
-    digitalWrite(team2led2, LOW);
-    digitalWrite(team2led3, LOW);
-    digitalWrite(team2led4, LOW);
-    digitalWrite(team2led5, LOW);
-    delay(20000);
-    led(health1,health2);
+        digitalWrite(team1led1, LOW);
+        digitalWrite(team1led2, LOW);
+        digitalWrite(team1led3, LOW);
+        digitalWrite(team1led4, LOW);
+        digitalWrite(team1led5, LOW);
+        digitalWrite(team2led1, LOW);
+        digitalWrite(team2led2, LOW);
+        digitalWrite(team2led3, LOW);
+        digitalWrite(team2led4, LOW);
+        digitalWrite(team2led5, LOW);
+        Serial.println("waut for 20 seconds");
+        Serial.print("health 1:");
+        Serial.print(health1);
+        Serial.print("health 2:");
+        Serial.println(health2);
+        delay(20000);
+        led(health1, health2);
     }
-    else if (results.value == gun2 || results.value == temp2)
+    else if ((results.value == gun2 || results.value == temp2) && flag == 1)
     {
       Serial.println(results.value, HEX );
       health2--;
       led(health1, health2);
       delay(3000);
-    digitalWrite(team1led1, LOW);
-    digitalWrite(team1led2, LOW);
-    digitalWrite(team1led3, LOW);
-    digitalWrite(team1led4,  LOW);
-    digitalWrite(team1led5, LOW);
-    digitalWrite(team2led1, LOW);
-    digitalWrite(team2led2, LOW);
-    digitalWrite(team2led3, LOW);
-    digitalWrite(team2led4, LOW);
-    digitalWrite(team2led5, LOW);
-    delay(20000);
-    led(health1,health2);
+        digitalWrite(team1led1, LOW);
+        digitalWrite(team1led2, LOW);
+        digitalWrite(team1led3, LOW);
+        digitalWrite(team1led4, LOW);
+        digitalWrite(team1led5, LOW);
+        digitalWrite(team2led1, LOW);
+        digitalWrite(team2led2, LOW);
+        digitalWrite(team2led3, LOW);
+        digitalWrite(team2led4, LOW);
+        digitalWrite(team2led5, LOW);
+        Serial.println("waut for 20 seconds");
+        Serial.print("health 1 ");
+        Serial.print(health1);
+        Serial.print("health 2");
+        Serial.println(health2);
+        delay(20000);
+        led(health1, health2);
     }
+
     IRrec.resume();
   }
 }
