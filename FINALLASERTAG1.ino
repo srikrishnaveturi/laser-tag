@@ -60,7 +60,7 @@ int a = digitalRead(button);
       {
        
       digitalWrite(LED_BUILTIN,HIGH);
-      irsend.sendNEC(0xBBBBBBBB,32);
+      irsend.sendNEC(0xFFFFFFFF,32); //change to BBBBBBBB
       Serial.println("in if");
       AMMO--;
       }
