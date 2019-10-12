@@ -1,3 +1,5 @@
+//this code is for arduino NANO , so change the board to Arduino Nano
+
 #include<IRremote.h>
 #include <LiquidCrystal.h>
 int rec = 4;
