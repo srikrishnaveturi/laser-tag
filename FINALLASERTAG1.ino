@@ -1,99 +1,149 @@
 //this code is for arduino NANO , so change the board to Arduino Nano
 
-#include <IRremote.h>
+//GUN 1
+#include<IRremote.h>
 #include <LiquidCrystal.h>
-int rec = 4;
-int led = 7;
-#define button 12
-const int rs = 2, en = 5, d4 = 6, d5 = 7, d6 = 8, d7 = 9;
+#include<EEPROM.h>
+int i;
+int rec = 12;
+
+int buzzer = 2;
+int rumble = 11;
+int button = 4;
+int flag = 0;
+
+const int rs = 10, en = 9, d4 = 8, d5 = 7 , d6 = 6, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-long int TEMP = 2863311530;
+
+int resett = 29986;                //Decimal for Reset Hex
 
 IRsend irsend;
 IRrecv IRrec(rec);
 decode_results results;
-int health = 20;
-int AMMO = 100;
 
-void setup()
-{
+int ammo_addr = 0;          //addr of ammo variable
+int health_addr = 1;        //addr of health variable
+
+int health = 20;
+int ammo = 90;
+
+void setup() {
 
   Serial.begin(9600);
   IRrec.enableIRIn();
   pinMode(button, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
   //digitalWrite(button,HIGH);
-  pinMode(led, OUTPUT);
-  //pinMode(10,OUTPUT);
-  //analogWrite(10,255);
-  //lcd.backlight();
+  pinMode(buzzer, OUTPUT);
+  pinMode(rumble, OUTPUT);
+
+  digitalWrite(buzzer, LOW);
+  digitalWrite(rumble, LOW);
+
+  //reading previous value from EEPROM
+  ammo = EEPROM.read(ammo_addr);
+  health = EEPROM.read(health_addr);
+  //Overwriting previous value
+  EEPROM.write(ammo_addr, ammo);
+  EEPROM.write(health_addr, health);
+  lcd.begin(16, 2);
 }
 void loop()
 {
-  lcd.begin(16, 2);
-  //lcd.setBacklight(HIGH);
-  if (AMMO > 0)
+  digitalWrite(LED_BUILTIN, LOW);
+  //reading previous value from EEPROM
+  ammo = EEPROM.read(ammo_addr);
+  health = EEPROM.read(health_addr);
+
+  //Sending IR signal
+  int a = digitalRead(button);
+  if (a == 0)
   {
-    lcd.print("Ammo:");
-    lcd.print(AMMO);
+    digitalWrite(rumble, HIGH);
+    delay(500);
+
+    if (ammo != 0)
+    {
+      Serial.print("shooting");
+      digitalWrite(LED_BUILTIN, HIGH);
+      irsend.sendNEC(0xAAAAAAAA, 32);       //Send IR code AAAAAAAA
+      ammo--;
+      EEPROM.write(ammo_addr, ammo);        //Saving updated ammo
+    }
+    IRrec.enableIRIn();
+  }
+  //Receiving IR signal through TSOP
+  else
+  {
+    delay(100);
+    if (IRrec.decode(&results))
+    {
+      Serial.println(results.value, HEX);
+      if (results.value == 0xBBBBBBBB || results.value == 0x6EF0EB64)
+      { //check for infrared signal
+        if (health != 0)
+        {
+          Serial.println(results.value, HEX );         //print ir hex code
+          delay(100);
+          health--;
+          Serial.println(health);
+          EEPROM.write(health_addr, health);           //Saving updated health
+          if (health == 0 ) {
+            lcd.setCursor(0, 1);
+            lcd.print("DEAD            ");
+            digitalWrite(buzzer, HIGH);
+          }
+        }
+        delay(100);
+      }
+
+      //Resetting Ammo and Health
+      if (results.value == resett) {
+        health = 20;
+        ammo = 90;
+        digitalWrite(buzzer, LOW);
+        EEPROM.write(ammo_addr, ammo);
+        EEPROM.write(health_addr, health);
+
+        ammo = EEPROM.read(ammo_addr);
+        health = EEPROM.read(health_addr);
+        IRrec.resume();
+      }
+      IRrec.resume();
+    }
+  }
+
+  //Printing values on LCD
+  if (ammo > 0)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("AMMO:");
+    lcd.print(ammo);
+    lcd.print("         ");
   }
   else
   {
     lcd.setCursor(0, 0);
-    lcd.print("no ammo left");
+    lcd.print("NO AMMO LEFT       ");
+    if (flag == 0)
+    {
+      for (i = 0; i < 5; i++)
+      {
+        digitalWrite(buzzer, HIGH);
+        delay(500);
+        digitalWrite(buzzer, LOW);
+        delay(500);
+      }
+      flag = 1;
+    }
+
   }
   if (health > 0)
   {
     lcd.setCursor(0, 1);
-    lcd.print("Health:");
+    lcd.print("HEALTH:");
     lcd.print(health);
+    lcd.print("         ");
   }
-  else
-  {
-    lcd.setCursor(0, 1);
-    lcd.print("DEAD");
-  }
-  int a = digitalRead(button);
-
-  if (a == 0)
-  {
-    if (AMMO != 0)
-    {
-
-      digitalWrite(LED_BUILTIN, HIGH);
-      irsend.sendNEC(0xFFFFFFFF, 32); //change to BBBBBBBB
-      Serial.println("in if");
-      AMMO--;
-    }
-
-    Serial.println("sent");
-    IRrec.enableIRIn();
-  }
-  else
-  {
-    digitalWrite(LED_BUILTIN, LOW);
-    Serial.println("in else");
-    delay(100);
-    if (IRrec.decode(&results))
-    {
-      if (results.value == TEMP)
-      { //check for infrared signal
-        if (health != 0)
-        {
-          Serial.println(results.value, HEX);
-          delay(100);
-          //print ir hex code
-          Serial.println("in");
-          health--;
-        }
-        else
-        {
-          exit(0);
-        }
-        delay(100);
-        //reduce health by 1
-        IRrec.resume();
-      }
-    }
-  }
+  digitalWrite(rumble, LOW);
 }
