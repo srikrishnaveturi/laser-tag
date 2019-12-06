@@ -1,96 +1,145 @@
-#include <IRremote.h>
+//GUN 2
+#include<IRremote.h>
 #include <LiquidCrystal.h>
-int rec = 4;
-int led = 7;
-#define button 12
-const int rs = 2, en = 5, d4 = 6, d5 = 7, d6 = 8, d7 = 9;
+#include<EEPROM.h>
+int i;
+int rec = 12;
+
+int buzzer = 2;
+int rumble = 11;
+int button = 4;
+int flag = 0;
+
+const int rs = 10, en = 9, d4 = 8, d5 = 7 , d6 = 6, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+int resett = 29986;                //Decimal for Reset Hex
 
 IRsend irsend;
 IRrecv IRrec(rec);
-long int temp = 3149642683;
 decode_results results;
-int health = 20;
-int AMMO = 100;
 
-void setup()
-{
+int ammo_addr = 0;          //addr of ammo variable
+int health_addr = 1;        //addr of health variable
+
+int health = 20;
+int ammo = 90;
+
+void setup() {
+
   Serial.begin(9600);
   IRrec.enableIRIn();
   pinMode(button, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
   //digitalWrite(button,HIGH);
-  pinMode(led, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+  pinMode(rumble, OUTPUT);
+
+  digitalWrite(buzzer, LOW);
+  digitalWrite(rumble, LOW);
+
+
+  ammo = EEPROM.read(ammo_addr);           //reading previous value from EEPROM
+  health = EEPROM.read(health_addr);
+
+  EEPROM.write(ammo_addr, ammo);           //Overwriting previous value
+  EEPROM.write(health_addr, health);
+  lcd.begin(16, 2);
 }
 void loop()
 {
-  lcd.begin(16, 2);
-  if (AMMO > 0)
+  digitalWrite(LED_BUILTIN, LOW);
+  ammo = EEPROM.read(ammo_addr);           //reading previous value from EEPROM
+  health = EEPROM.read(health_addr);
+  //Sending IR signal
+  int a = digitalRead(button);
+  if (a == 0)
   {
+    digitalWrite(rumble, HIGH);
+    delay(500);
 
-    lcd.print("Ammo:");
-    lcd.print(AMMO);
-  }
-  lcd.setCursor(0, 1);
-  if (health > 0)
-  {
-    lcd.print("Health:");
-    lcd.print(health);
-  }
-  if (AMMO == 0)
-  {
-
-    lcd.setCursor(0, 0);
-    lcd.print("Ammo over");
-  }
-  if (health == 0)
-  {
-
-    lcd.setCursor(0, 0);
-    lcd.print("DEAD");
-    exit(0);
-  }
-
-  if (digitalRead(button) == 0)
-  {
-
-    if (AMMO != 0)
+    if (ammo != 0)
     {
+      Serial.print("shooting");
       digitalWrite(LED_BUILTIN, HIGH);
-      irsend.sendNEC(0xAAAAAAAA, 32);
-      Serial.println("in if");
-      AMMO--;
-
-      Serial.println("sent");
-      IRrec.enableIRIn();
+      irsend.sendNEC(0xBBBBBBBB, 32);       //Send IR code BBBBBBBB
+      ammo--;
+      EEPROM.write(ammo_addr, ammo);        //Saving updated ammo
     }
+    IRrec.enableIRIn();
   }
+  //Receiving IR signal through TSOP
   else
   {
-    digitalWrite(LED_BUILTIN, LOW);
-    Serial.println("in else");
     delay(100);
     if (IRrec.decode(&results))
     {
-      if (results.value == temp)
-      {
-        Serial.println(results.value, HEX);
+      Serial.println(results.value, HEX);
+      if (results.value == 0xAAAAAAAA || results.value == 0xCDF65D5)
+      { //check for infrared signal
+        if (health != 0)
+        {
+          Serial.println(results.value, HEX );         //print ir hex code
+          delay(100);
+          health--;
+          Serial.println(health);
+          EEPROM.write(health_addr, health);           //Saving updated health
+          if (health == 0 ) {
+            lcd.setCursor(0, 1);
+            lcd.print("DEAD            ");
+            digitalWrite(buzzer, HIGH);
+            // exit(0);
+          }
+        }
         delay(100);
-        //print ir hex code
-        Serial.println("in");
-        health--;
       }
-      if (health == 0)
-      {
+      //Resetting Ammo and Health
+      if (results.value == resett) {
+        health = 20;
+        ammo = 90;
+        digitalWrite(buzzer, LOW);
+        EEPROM.write(ammo_addr, ammo);
+        EEPROM.write(health_addr, health);
 
-        lcd.setCursor(0, 1);
-        lcd.print("DEAD");
-        exit(0);
+        ammo = EEPROM.read(ammo_addr);
+        health = EEPROM.read(health_addr);
+        IRrec.resume();
       }
-
-      delay(100);
-      //reduce health by 1
       IRrec.resume();
     }
   }
+
+  //Printing values on LCD
+  if (ammo > 0)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("AMMO:");
+    lcd.print(ammo);
+    lcd.print("         ");
+  }
+  else
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("NO AMMO LEFT       ");
+    if (flag == 0)
+    {
+      for (i = 0; i < 5; i++)
+      {
+        digitalWrite(buzzer, HIGH);
+        delay(500);
+        digitalWrite(buzzer, LOW);
+        delay(500);
+      }
+      flag = 1;
+    }
+
+  }
+  if (health > 0)
+  {
+    lcd.setCursor(0, 1);
+    lcd.print("HEALTH:");
+    lcd.print(health);
+    lcd.print("         ");
+  }
+  digitalWrite(rumble, LOW);
 }
