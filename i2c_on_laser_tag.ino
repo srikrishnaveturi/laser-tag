@@ -65,9 +65,9 @@ void loop()
     {
       Serial.print("shooting");
       digitalWrite(LED_BUILTIN, HIGH);
-      irsend.sendNEC(0xAAAAAAAA, 32);       //Send IR code AAAAAAAA
+      irsend.sendNEC(0xAAAAAAAA, 32);       //Send IR code AAAAAAAA, It can be changed according to the user needs
       ammo--;
-      EEPROM.write(ammo_addr, ammo);        //Saving updated ammo
+      EEPROM.write(ammo_addr, ammo);        //Saving updated ammo, Once shot, the ammos need to be stored in the eeprom so that if there is a power disconnect itll retain its old state
     }
     IRrec.enableIRIn();
   }
